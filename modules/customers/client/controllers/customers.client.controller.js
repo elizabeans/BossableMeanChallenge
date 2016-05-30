@@ -9,45 +9,41 @@
   CustomersController.$inject = ['$scope', '$state', 'Authentication', 'customerResolve'];
 
   function CustomersController ($scope, $state, Authentication, customer) {
-    var vm = this;
+    $scope.authentication = Authentication;
 
-    vm.authentication = Authentication;
-    vm.customer = customer;
-    vm.error = null;
-    vm.form = {};
-    vm.remove = remove;
-    vm.save = save;
+    // Create new Customer
+    $scope.create = function() {
+      // Create new Customer object
+      var customer = new Customers ({
+        firstName: this.firstName,
+        surname: this.surname
+      });
+
+      // Redirect after save
+      customer.$sace(function(response) {
+        $location.path('customers/' + reponse._id);
+
+        // Clear form fields
+        $scope.name = '';
+      }, function (errorResponse) {
+        $scope.error = errorResponse.data.message;
+      });
+    };
 
     // Remove existing Customer
-    function remove() {
-      if (confirm('Are you sure you want to delete?')) {
-        vm.customer.$remove($state.go('customers.list'));
-      }
-    }
+    $scope.remove = function(customer) {
+      if (customer) { customer.$remove();
 
-    // Save Customer
-    function save(isValid) {
-      if (!isValid) {
-        $scope.$broadcast('show-errors-check-validity', 'vm.form.customerForm');
-        return false;
-      }
-
-      // TODO: move create/update logic to service
-      if (vm.customer._id) {
-        vm.customer.$update(successCallback, errorCallback);
+        for (var i in $scope.customers) {
+          if ($scope.customers[i] === customer) {
+            $scope.customers.splice(i, 1);
+          }
+        }
       } else {
-        vm.customer.$save(successCallback, errorCallback);
-      }
-
-      function successCallback(res) {
-        $state.go('customers.view', {
-          customerId: res._id
+        $scope.customer.$remove(function() {
+          $location.path('customers');
         });
       }
-
-      function errorCallback(res) {
-        vm.error = res.data.message;
-      }
-    }
+    };
   }
 })();
